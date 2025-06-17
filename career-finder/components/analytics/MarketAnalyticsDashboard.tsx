@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   BarChart,
   Bar,
@@ -26,15 +26,11 @@ import {
 import {
   TrendingUp,
   TrendingDown,
-  Users,
   DollarSign,
-  MapPin,
   Award,
   Filter,
-  Download,
   RefreshCw,
   BarChart3,
-  PieChart,
   Globe,
   Building,
   Briefcase,
@@ -46,24 +42,71 @@ import {
 } from 'lucide-react'
 
 // Backend URL configuration
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
 
 interface AnalyticsData {
-  salaryDistribution: Array<{ range: string; count: number; percentage: number }>
-  geographicData: Array<{ location: string; averageSalary: number; medianSalary: number; jobCount: number; growth: string }>
-  experienceData: Array<{ level: string; averageSalary: number; jobCount: number; q25: number; median: number; q75: number }>
-  skillsData: Array<{ skill: string; salaryBoost: number; frequency: number; demand: number; growth: string }>
-  companySizeData: Array<{ size: string; averageSalary: number; jobCount: number; benefits: number; remoteRatio: number }>
-  trendData: Array<{ month: string; averageSalary: number; jobPostings: number; applications: number }>
-  jobTitleData: Array<{ title: string; count: number; averageSalary: number; growth: string }>
+  salaryDistribution: Array<{
+    range: string
+    count: number
+    percentage: number
+  }>
+  geographicData: Array<{
+    location: string
+    averageSalary: number
+    medianSalary: number
+    jobCount: number
+    growth: string
+  }>
+  experienceData: Array<{
+    level: string
+    averageSalary: number
+    jobCount: number
+    q25: number
+    median: number
+    q75: number
+  }>
+  skillsData: Array<{
+    skill: string
+    salaryBoost: number
+    frequency: number
+    demand: number
+    growth: string
+  }>
+  companySizeData: Array<{
+    size: string
+    averageSalary: number
+    jobCount: number
+    benefits: number
+    remoteRatio: number
+  }>
+  trendData: Array<{
+    month: string
+    averageSalary: number
+    jobPostings: number
+    applications: number
+  }>
+  jobTitleData: Array<{
+    title: string
+    count: number
+    averageSalary: number
+    growth: string
+  }>
   metadata: {
     lastUpdated: string
     totalRecords: number
     filteredRecords: number
     dataQuality: number
     modelAccuracy: number
-    appliedFilters: any
+    appliedFilters: unknown
   }
+}
+
+type AvailableFilters = {
+  locations: Record<string, number>
+  experienceLevels: Record<string, number>
+  companySizes: Record<string, number>
+  // Add other filter fields as needed
 }
 
 const MarketAnalyticsDashboard = () => {
@@ -77,7 +120,7 @@ const MarketAnalyticsDashboard = () => {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [availableFilters, setAvailableFilters] = useState<any>({})
+  const [availableFilters, setAvailableFilters] = useState<AvailableFilters>()
 
   const tabs = [
     { id: 'overview', label: 'Market Overview', icon: BarChart3 },
@@ -120,7 +163,9 @@ const MarketAnalyticsDashboard = () => {
 
   const hasInsufficientData = useMemo(() => {
     if (!data) return false
-    return data.metadata.filteredRecords > 0 && data.metadata.filteredRecords < 10
+    return (
+      data.metadata.filteredRecords > 0 && data.metadata.filteredRecords < 10
+    )
   }, [data])
 
   const activeFiltersCount = useMemo(() => {
@@ -128,13 +173,13 @@ const MarketAnalyticsDashboard = () => {
   }, [filters])
 
   // Fetch analytics data from backend
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       console.log(' Fetching analytics data with filters:', filters)
-      
+
       // Build query parameters
       const params = new URLSearchParams()
       Object.entries(filters).forEach(([key, value]) => {
@@ -142,46 +187,58 @@ const MarketAnalyticsDashboard = () => {
           params.append(key, value)
         }
       })
-      
-      const response = await fetch(`${BACKEND_URL}/api/analytics/overview?${params}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        mode: 'cors'
-      })
-      
+
+      const response = await fetch(
+        `${BACKEND_URL}/api/analytics/overview?${params}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'
+        }
+      )
+
       if (!response.ok) {
-        throw new Error(`Backend error: ${response.status} ${response.statusText}`)
+        throw new Error(
+          `Backend error: ${response.status} ${response.statusText}`
+        )
       }
-      
+
       const result = await response.json()
-      
+
       if (result.status === 'success') {
         setData(result.data)
         console.log('Analytics data loaded:', result.data.metadata)
       } else {
         throw new Error(result.message || 'Failed to load analytics data')
       }
-      
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching analytics data:', error)
-      setError(error.message)
+
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError("unknown")
+      }
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filters])
 
   // Fetch available filter options
   const fetchFilterOptions = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/analytics/data-summary`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        mode: 'cors'
-      })
-      
+      const response = await fetch(
+        `${BACKEND_URL}/api/analytics/data-summary`,
+        {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          mode: 'cors'
+        }
+      )
+
       if (response.ok) {
         const result = await response.json()
         if (result.status === 'success') {
@@ -196,7 +253,7 @@ const MarketAnalyticsDashboard = () => {
   // Load data on component mount and when filters change
   useEffect(() => {
     fetchAnalyticsData()
-  }, [filters])
+  }, [filters, fetchAnalyticsData])
 
   // Load filter options on mount
   useEffect(() => {
@@ -229,10 +286,12 @@ const MarketAnalyticsDashboard = () => {
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
         <div className='text-center max-w-md mx-auto p-6'>
           <AlertCircle className='w-16 h-16 text-red-500 mx-auto mb-4' />
-          <h2 className='text-xl font-semibold text-gray-900 mb-2'>Error Loading Analytics</h2>
+          <h2 className='text-xl font-semibold text-gray-900 mb-2'>
+            Error Loading Analytics
+          </h2>
           <p className='text-gray-600 mb-4'>{error}</p>
           <div className='space-y-2'>
-            <button 
+            <button
               onClick={fetchAnalyticsData}
               className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
             >
@@ -254,7 +313,9 @@ const MarketAnalyticsDashboard = () => {
         <div className='text-center'>
           <RefreshCw className='w-12 h-12 animate-spin text-blue-600 mx-auto mb-4' />
           <p className='text-gray-600'>Loading real market analytics...</p>
-          <p className='text-sm text-gray-500 mt-2'>Processing CSV data with applied filters</p>
+          <p className='text-sm text-gray-500 mt-2'>
+            Processing CSV data with applied filters
+          </p>
         </div>
       </div>
     )
@@ -277,7 +338,11 @@ const MarketAnalyticsDashboard = () => {
     color = 'blue',
     isValid = true
   }) => (
-    <div className={`bg-white rounded-xl shadow-sm border p-6 ${!isValid ? 'opacity-50' : ''}`}>
+    <div
+      className={`bg-white rounded-xl shadow-sm border p-6 ${
+        !isValid ? 'opacity-50' : ''
+      }`}
+    >
       <div className='flex items-center justify-between'>
         <div>
           <p className='text-sm font-medium text-gray-600'>{title}</p>
@@ -309,11 +374,11 @@ const MarketAnalyticsDashboard = () => {
   )
 
   // Empty state component
-  const EmptyDataState = ({ 
-    type, 
-    message, 
-    suggestions 
-  }: { 
+  const EmptyDataState = ({
+    type,
+    message,
+    suggestions
+  }: {
     type: 'no-data' | 'insufficient-data'
     message: string
     suggestions: string[]
@@ -328,11 +393,9 @@ const MarketAnalyticsDashboard = () => {
         <h3 className='text-xl font-semibold text-gray-900 mb-2'>
           {type === 'no-data' ? 'No Data Found' : 'Insufficient Data'}
         </h3>
-        <p className='text-gray-600 mb-6 max-w-md mx-auto'>
-          {message}
-        </p>
+        <p className='text-gray-600 mb-6 max-w-md mx-auto'>{message}</p>
       </div>
-      
+
       <div className='bg-gray-50 rounded-lg p-6 max-w-md mx-auto'>
         <h4 className='font-medium text-gray-900 mb-3'>Suggestions:</h4>
         <ul className='text-sm text-gray-600 space-y-2'>
@@ -344,7 +407,7 @@ const MarketAnalyticsDashboard = () => {
           ))}
         </ul>
       </div>
-      
+
       {activeFiltersCount > 0 && (
         <button
           onClick={resetFilters}
@@ -361,12 +424,19 @@ const MarketAnalyticsDashboard = () => {
       <div className='flex items-center justify-between mb-4'>
         <h3 className='text-lg font-semibold text-gray-900 flex items-center'>
           <Filter className='w-5 h-5 mr-2' />
-          Data Filters {data && (
-            <span className={`ml-2 text-sm font-normal ${
-              hasNoData ? 'text-red-600' : 
-              hasInsufficientData ? 'text-yellow-600' : 'text-gray-500'
-            }`}>
-              ({data.metadata.filteredRecords.toLocaleString()} of {data.metadata.totalRecords.toLocaleString()} records)
+          Data Filters{' '}
+          {data && (
+            <span
+              className={`ml-2 text-sm font-normal ${
+                hasNoData
+                  ? 'text-red-600'
+                  : hasInsufficientData
+                  ? 'text-yellow-600'
+                  : 'text-gray-500'
+              }`}
+            >
+              ({data.metadata.filteredRecords.toLocaleString()} of{' '}
+              {data.metadata.totalRecords.toLocaleString()} records)
               {hasNoData && ' - No matches'}
               {hasInsufficientData && ' - Limited data'}
             </span>
@@ -380,12 +450,16 @@ const MarketAnalyticsDashboard = () => {
           Reset Filters
         </button>
       </div>
-      
+
       {/* Data status alert */}
       {data && (hasNoData || hasInsufficientData) && (
-        <div className={`mb-4 p-3 rounded-lg ${
-          hasNoData ? 'bg-red-50 border-red-200 text-red-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-        } border`}>
+        <div
+          className={`mb-4 p-3 rounded-lg ${
+            hasNoData
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+          } border`}
+        >
           <div className='flex items-center'>
             {hasNoData ? (
               <SearchX className='w-5 h-5 mr-2' />
@@ -393,15 +467,14 @@ const MarketAnalyticsDashboard = () => {
               <AlertTriangle className='w-5 h-5 mr-2' />
             )}
             <span className='text-sm font-medium'>
-              {hasNoData 
-                ? 'No records match your current filters' 
-                : `Only ${data.metadata.filteredRecords} records found - results may not be representative`
-              }
+              {hasNoData
+                ? 'No records match your current filters'
+                : `Only ${data.metadata.filteredRecords} records found - results may not be representative`}
             </span>
           </div>
         </div>
       )}
-      
+
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <select
           value={filters.location}
@@ -409,11 +482,12 @@ const MarketAnalyticsDashboard = () => {
           className='border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         >
           <option value='All'>All Locations</option>
-          {availableFilters.locations && Object.keys(availableFilters.locations).map(location => (
-            <option key={location} value={location}>
-              {location} ({availableFilters.locations[location]})
-            </option>
-          ))}
+          {availableFilters?.locations &&
+            Object.keys(availableFilters.locations).map(location => (
+              <option key={location} value={location}>
+                {location} ({availableFilters.locations[location]})
+              </option>
+            ))}
         </select>
 
         <select
@@ -422,11 +496,12 @@ const MarketAnalyticsDashboard = () => {
           className='border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         >
           <option value='All'>All Experience Levels</option>
-          {availableFilters.experienceLevels && Object.keys(availableFilters.experienceLevels).map(level => (
-            <option key={level} value={level}>
-              {level} ({availableFilters.experienceLevels[level]})
-            </option>
-          ))}
+          {availableFilters?.experienceLevels &&
+            Object.keys(availableFilters.experienceLevels).map(level => (
+              <option key={level} value={level}>
+                {level} ({availableFilters.experienceLevels[level]})
+              </option>
+            ))}
         </select>
 
         <select
@@ -435,11 +510,12 @@ const MarketAnalyticsDashboard = () => {
           className='border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         >
           <option value='All'>All Company Sizes</option>
-          {availableFilters.companySizes && Object.keys(availableFilters.companySizes).map(size => (
-            <option key={size} value={size}>
-              {size} ({availableFilters.companySizes[size]})
-            </option>
-          ))}
+          {availableFilters?.companySizes &&
+            Object.keys(availableFilters.companySizes).map(size => (
+              <option key={size} value={size}>
+                {size} ({availableFilters.companySizes[size]})
+              </option>
+            ))}
         </select>
 
         <select
@@ -453,23 +529,29 @@ const MarketAnalyticsDashboard = () => {
           <option value='150k+'>$150k+</option>
         </select>
       </div>
-      
+
       {/* Active filters display */}
-      {Object.entries(filters).some(([_, value]) => value !== 'All') && (
+      {Object.entries(filters).some(([, value]) => value !== 'All') && (
         <div className='mt-4 flex flex-wrap gap-2'>
-          <span className='text-sm font-medium text-gray-700'>Active filters:</span>
-          {Object.entries(filters).map(([key, value]) => 
-            value !== 'All' && (
-              <span key={key} className='inline-flex items-center px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full'>
-                {key}: {value}
-                <button 
-                  onClick={() => handleFilterChange(key, 'All')}
-                  className='ml-1 text-blue-600 hover:text-blue-800'
+          <span className='text-sm font-medium text-gray-700'>
+            Active filters:
+          </span>
+          {Object.entries(filters).map(
+            ([key, value]) =>
+              value !== 'All' && (
+                <span
+                  key={key}
+                  className='inline-flex items-center px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full'
                 >
-                  ×
-                </button>
-              </span>
-            )
+                  {key}: {value}
+                  <button
+                    onClick={() => handleFilterChange(key, 'All')}
+                    className='ml-1 text-blue-600 hover:text-blue-800'
+                  >
+                    ×
+                  </button>
+                </span>
+              )
           )}
         </div>
       )}
@@ -483,7 +565,7 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData) {
       return (
         <EmptyDataState
-          type="no-data"
+          type='no-data'
           message="Your current filter combination doesn't match any records in our dataset."
           suggestions={[
             'Try removing one or more filters',
@@ -498,7 +580,7 @@ const MarketAnalyticsDashboard = () => {
     if (hasInsufficientData) {
       return (
         <EmptyDataState
-          type="insufficient-data"
+          type='insufficient-data'
           message={`Only ${data.metadata.filteredRecords} records match your filters. Analytics require at least 10 records for meaningful insights.`}
           suggestions={[
             'Add more data to your dataset',
@@ -511,15 +593,30 @@ const MarketAnalyticsDashboard = () => {
     }
 
     // Calculate key metrics from real data
-    const avgSalary = data.geographicData.length > 0 
-      ? Math.round(data.geographicData.reduce((sum, item) => sum + item.averageSalary, 0) / data.geographicData.length)
-      : 0
-    
-    const totalJobs = data.geographicData.reduce((sum, item) => sum + item.jobCount, 0)
+    const avgSalary =
+      data.geographicData.length > 0
+        ? Math.round(
+            data.geographicData.reduce(
+              (sum, item) => sum + item.averageSalary,
+              0
+            ) / data.geographicData.length
+          )
+        : 0
+
+    const totalJobs = data.geographicData.reduce(
+      (sum, item) => sum + item.jobCount,
+      0
+    )
     const totalCompanies = data.geographicData.length
-    const avgGrowth = data.geographicData.length > 0
-      ? (data.geographicData.reduce((sum, item) => sum + parseFloat(item.growth), 0) / data.geographicData.length).toFixed(1)
-      : '0.0'
+    const avgGrowth =
+      data.geographicData.length > 0
+        ? (
+            data.geographicData.reduce(
+              (sum, item) => sum + parseFloat(item.growth),
+              0
+            ) / data.geographicData.length
+          ).toFixed(1)
+        : '0.0'
 
     return (
       <div className='space-y-6'>
@@ -564,7 +661,12 @@ const MarketAnalyticsDashboard = () => {
           {/* Salary Distribution */}
           <div className='bg-white rounded-xl shadow-sm border p-6'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-              Salary Distribution ({data.salaryDistribution.reduce((sum, item) => sum + item.count, 0)} records)
+              Salary Distribution (
+              {data.salaryDistribution.reduce(
+                (sum, item) => sum + item.count,
+                0
+              )}{' '}
+              records)
             </h3>
             {data.salaryDistribution.length > 0 ? (
               <ResponsiveContainer width='100%' height={300}>
@@ -674,10 +776,11 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData || hasInsufficientData) {
       return (
         <EmptyDataState
-          type={hasNoData ? "no-data" : "insufficient-data"}
-          message={hasNoData 
-            ? "No geographic data matches your current filters."
-            : "Insufficient data for meaningful geographic analysis."
+          type={hasNoData ? 'no-data' : 'insufficient-data'}
+          message={
+            hasNoData
+              ? 'No geographic data matches your current filters.'
+              : 'Insufficient data for meaningful geographic analysis.'
           }
           suggestions={[
             'Try selecting "All Locations" to see all geographic data',
@@ -694,77 +797,88 @@ const MarketAnalyticsDashboard = () => {
     return (
       <div className='space-y-6'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-        {/* Geographic Salary Comparison - Vertical Version */}
-        <div className='bg-white rounded-xl shadow-sm border p-6'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-            Average Salary by Location ({data.geographicData.length} locations)
-        </h3>
-        {data.geographicData.length > 0 ? (
-            <div>
-            {/* Debug info */}
-            <div className="text-xs text-gray-500 mb-4">
-                Range: ${Math.min(...data.geographicData.map(d => d.averageSalary)).toLocaleString()} - 
-                ${Math.max(...data.geographicData.map(d => d.averageSalary)).toLocaleString()}
-            </div>
-            
-            <ResponsiveContainer width='100%' height={600}>
-                <BarChart 
-                data={data.geographicData} 
-                margin={{ top: 20, right: 30, bottom: 100, left: 20 }}
-                >
-                <CartesianGrid strokeDasharray='3 3' />
-                <XAxis 
-                    dataKey='location'
-                    tick={props => (
-                      <text
-                        {...props}
-                        style={{ fontSize: 10 }}
-                        transform={`rotate(-45,${props.x},${props.y})`}
-                        textAnchor="end"
-                      >
-                        {props.payload.value}
-                      </text>
-                    )}
-                    height={100}
-                    interval={0}
-                />
-                <YAxis 
-                    tickFormatter={value => `$${Math.round(value / 1000)}k`}
-                />
-                <Tooltip 
-                    formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Average Salary']}
-                    labelFormatter={(label) => `Location: ${label}`}
-                />
-                <Bar 
-                    dataKey='averageSalary' 
-                    fill={colors.primary}
-                    radius={[4, 4, 0, 0]}
-                />
-                </BarChart>
-            </ResponsiveContainer>
-            </div>
-        ) : (
-            <div className='h-[600px] flex items-center justify-center text-gray-500'>
-            <div className='text-center'>
-                <Database className='w-12 h-12 mx-auto mb-2 opacity-50' />
-                <p>No geographic salary data available</p>
-            </div>
-            </div>
-        )}
-        </div>
+          {/* Geographic Salary Comparison - Vertical Version */}
+          <div className='bg-white rounded-xl shadow-sm border p-6'>
+            <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+              Average Salary by Location ({data.geographicData.length}{' '}
+              locations)
+            </h3>
+            {data.geographicData.length > 0 ? (
+              <div>
+                {/* Debug info */}
+                <div className='text-xs text-gray-500 mb-4'>
+                  Range: $
+                  {Math.min(
+                    ...data.geographicData.map(d => d.averageSalary)
+                  ).toLocaleString()}{' '}
+                  - $
+                  {Math.max(
+                    ...data.geographicData.map(d => d.averageSalary)
+                  ).toLocaleString()}
+                </div>
+
+                <ResponsiveContainer width='100%' height={600}>
+                  <BarChart
+                    data={data.geographicData}
+                    margin={{ top: 20, right: 30, bottom: 100, left: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray='3 3' />
+                    <XAxis
+                      dataKey='location'
+                      tick={props => (
+                        <text
+                          {...props}
+                          style={{ fontSize: 10 }}
+                          transform={`rotate(-45,${props.x},${props.y})`}
+                          textAnchor='end'
+                        >
+                          {props.payload.value}
+                        </text>
+                      )}
+                      height={100}
+                      interval={0}
+                    />
+                    <YAxis
+                      tickFormatter={value => `$${Math.round(value / 1000)}k`}
+                    />
+                    <Tooltip
+                      formatter={value => [
+                        `$${Number(value).toLocaleString()}`,
+                        'Average Salary'
+                      ]}
+                      labelFormatter={label => `Location: ${label}`}
+                    />
+                    <Bar
+                      dataKey='averageSalary'
+                      fill={colors.primary}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className='h-[600px] flex items-center justify-center text-gray-500'>
+                <div className='text-center'>
+                  <Database className='w-12 h-12 mx-auto mb-2 opacity-50' />
+                  <p>No geographic salary data available</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Job Market Size */}
           <div className='bg-white rounded-xl shadow-sm border p-6'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-              Job Market Size by Location ({data.geographicData.length} locations)
+              Job Market Size by Location ({data.geographicData.length}{' '}
+              locations)
             </h3>
             {data.geographicData.length > 0 ? (
               <ResponsiveContainer width='100%' height={400}>
                 <BarChart data={data.geographicData} margin={{ bottom: 5 }}>
                   <CartesianGrid strokeDasharray='3 3' />
-                  <XAxis 
-                    dataKey='location' 
-                    tick={(props) => {
+                  <XAxis
+                    dataKey='location'
+                    tick={props => {
                       const { x, y, payload } = props
                       return (
                         <text
@@ -772,9 +886,9 @@ const MarketAnalyticsDashboard = () => {
                           y={y}
                           dy={16}
                           fontSize={10}
-                          textAnchor="end"
+                          textAnchor='end'
                           transform={`rotate(-45,${x},${y})`}
-                          fill="#6B7280"
+                          fill='#6B7280'
                         >
                           {payload.value}
                         </text>
@@ -783,7 +897,12 @@ const MarketAnalyticsDashboard = () => {
                     height={80}
                   />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => [Number(value).toLocaleString(), 'Job Count']} />
+                  <Tooltip
+                    formatter={(value) => [
+                      Number(value).toLocaleString(),
+                      'Job Count'
+                    ]}
+                  />
                   <Bar dataKey='jobCount' fill={colors.secondary} />
                 </BarChart>
               </ResponsiveContainer>
@@ -866,10 +985,11 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData || hasInsufficientData) {
       return (
         <EmptyDataState
-          type={hasNoData ? "no-data" : "insufficient-data"}
-          message={hasNoData 
-            ? "No skills data matches your current filters."
-            : "Insufficient data for meaningful skills analysis."
+          type={hasNoData ? 'no-data' : 'insufficient-data'}
+          message={
+            hasNoData
+              ? 'No skills data matches your current filters.'
+              : 'Insufficient data for meaningful skills analysis.'
           }
           suggestions={[
             'Skills analysis is based on job title patterns',
@@ -893,7 +1013,9 @@ const MarketAnalyticsDashboard = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='skill' />
                 <YAxis />
-                <Tooltip formatter={value => `+$${Number(value).toLocaleString()}`} />
+                <Tooltip
+                  formatter={value => `+$${Number(value).toLocaleString()}`}
+                />
                 <Bar dataKey='salaryBoost' fill={colors.accent} />
               </BarChart>
             </ResponsiveContainer>
@@ -972,10 +1094,11 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData || hasInsufficientData) {
       return (
         <EmptyDataState
-          type={hasNoData ? "no-data" : "insufficient-data"}
-          message={hasNoData 
-            ? "No experience data matches your current filters."
-            : "Insufficient data for meaningful experience analysis."
+          type={hasNoData ? 'no-data' : 'insufficient-data'}
+          message={
+            hasNoData
+              ? 'No experience data matches your current filters.'
+              : 'Insufficient data for meaningful experience analysis.'
           }
           suggestions={[
             'Try selecting "All Experience Levels"',
@@ -999,11 +1122,31 @@ const MarketAnalyticsDashboard = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='level' />
                 <YAxis />
-                <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
-                <Bar dataKey='q25' fill={colors.primary} fillOpacity={0.3} name='25th Percentile' />
-                <Bar dataKey='median' fill={colors.primary} fillOpacity={0.6} name='Median' />
-                <Bar dataKey='q75' fill={colors.primary} name='75th Percentile' />
-                <Bar dataKey='averageSalary' fill={colors.secondary} name='Average' />
+                <Tooltip
+                  formatter={value => `$${Number(value).toLocaleString()}`}
+                />
+                <Bar
+                  dataKey='q25'
+                  fill={colors.primary}
+                  fillOpacity={0.3}
+                  name='25th Percentile'
+                />
+                <Bar
+                  dataKey='median'
+                  fill={colors.primary}
+                  fillOpacity={0.6}
+                  name='Median'
+                />
+                <Bar
+                  dataKey='q75'
+                  fill={colors.primary}
+                  name='75th Percentile'
+                />
+                <Bar
+                  dataKey='averageSalary'
+                  fill={colors.secondary}
+                  name='Average'
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1043,10 +1186,11 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData || hasInsufficientData) {
       return (
         <EmptyDataState
-          type={hasNoData ? "no-data" : "insufficient-data"}
-          message={hasNoData 
-            ? "No company data matches your current filters."
-            : "Insufficient data for meaningful company analysis."
+          type={hasNoData ? 'no-data' : 'insufficient-data'}
+          message={
+            hasNoData
+              ? 'No company data matches your current filters.'
+              : 'Insufficient data for meaningful company analysis.'
           }
           suggestions={[
             'Try selecting "All Company Sizes"',
@@ -1070,7 +1214,9 @@ const MarketAnalyticsDashboard = () => {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='size' />
                 <YAxis />
-                <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                <Tooltip
+                  formatter={value => `$${Number(value).toLocaleString()}`}
+                />
                 <Bar dataKey='averageSalary' fill={colors.primary} />
               </BarChart>
             </ResponsiveContainer>
@@ -1102,10 +1248,11 @@ const MarketAnalyticsDashboard = () => {
     if (hasNoData || hasInsufficientData) {
       return (
         <EmptyDataState
-          type={hasNoData ? "no-data" : "insufficient-data"}
-          message={hasNoData 
-            ? "No trend data matches your current filters."
-            : "Insufficient data for meaningful trend analysis."
+          type={hasNoData ? 'no-data' : 'insufficient-data'}
+          message={
+            hasNoData
+              ? 'No trend data matches your current filters.'
+              : 'Insufficient data for meaningful trend analysis.'
           }
           suggestions={[
             'Trend analysis requires historical data',
@@ -1131,7 +1278,11 @@ const MarketAnalyticsDashboard = () => {
                     stopColor={colors.primary}
                     stopOpacity={0.8}
                   />
-                  <stop offset='95%' stopColor={colors.primary} stopOpacity={0} />
+                  <stop
+                    offset='95%'
+                    stopColor={colors.primary}
+                    stopOpacity={0}
+                  />
                 </linearGradient>
                 <linearGradient id='colorJobs' x1='0' y1='0' x2='0' y2='1'>
                   <stop
@@ -1205,15 +1356,25 @@ const MarketAnalyticsDashboard = () => {
                 AI Job Market Analytics
               </h1>
               <p className='text-gray-600 mt-1'>
-                Real data analysis from {data?.metadata.totalRecords.toLocaleString()} job records
-                {data && data.metadata.filteredRecords !== data.metadata.totalRecords && (
-                  <span className={`font-medium ${
-                    hasNoData ? 'text-red-600' : 
-                    hasInsufficientData ? 'text-yellow-600' : 'text-blue-600'
-                  }`}>
-                    {' '}• {data.metadata.filteredRecords.toLocaleString()} filtered
-                  </span>
-                )}
+                Real data analysis from{' '}
+                {data?.metadata.totalRecords.toLocaleString()} job records
+                {data &&
+                  data.metadata.filteredRecords !==
+                    data.metadata.totalRecords && (
+                    <span
+                      className={`font-medium ${
+                        hasNoData
+                          ? 'text-red-600'
+                          : hasInsufficientData
+                          ? 'text-yellow-600'
+                          : 'text-blue-600'
+                      }`}
+                    >
+                      {' '}
+                      • {data.metadata.filteredRecords.toLocaleString()}{' '}
+                      filtered
+                    </span>
+                  )}
               </p>
             </div>
             <div className='flex space-x-3'>
@@ -1276,24 +1437,33 @@ const MarketAnalyticsDashboard = () => {
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-green-600'>{data.metadata.dataQuality}%</div>
+                <div className='text-2xl font-bold text-green-600'>
+                  {data.metadata.dataQuality}%
+                </div>
                 <div className='text-sm text-gray-600'>Data Completeness</div>
               </div>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-blue-600'>{data.metadata.modelAccuracy}%</div>
+                <div className='text-2xl font-bold text-blue-600'>
+                  {data.metadata.modelAccuracy}%
+                </div>
                 <div className='text-sm text-gray-600'>Model Accuracy (R²)</div>
               </div>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-purple-600'>{data.metadata.totalRecords.toLocaleString()}</div>
+                <div className='text-2xl font-bold text-purple-600'>
+                  {data.metadata.totalRecords.toLocaleString()}
+                </div>
                 <div className='text-sm text-gray-600'>Total Records</div>
               </div>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-amber-600'>{data.metadata.filteredRecords.toLocaleString()}</div>
+                <div className='text-2xl font-bold text-amber-600'>
+                  {data.metadata.filteredRecords.toLocaleString()}
+                </div>
                 <div className='text-sm text-gray-600'>Filtered Records</div>
               </div>
             </div>
             <div className='mt-4 text-xs text-gray-500'>
-              Last updated: {new Date(data.metadata.lastUpdated).toLocaleString()}
+              Last updated:{' '}
+              {new Date(data.metadata.lastUpdated).toLocaleString()}
             </div>
           </div>
         )}

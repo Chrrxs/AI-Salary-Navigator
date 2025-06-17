@@ -3,12 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   PredictionInput,
-  ExperienceLevelOption,
   CompanySizeOption,
   LocationOption,
-  EXPERIENCE_LEVELS,
-  COMPANY_SIZES,
-  SUPPORTED_LOCATIONS,
   VALIDATION_RULES
 } from '@/lib/types'
 
@@ -258,7 +254,7 @@ export default function PredictionForm ({
       const autoSelect = recommendedSkills.core.slice(0, 4)
       setSelectedSkills(autoSelect)
     }
-  }, [formData.jobTitle, recommendedSkills.core])
+  }, [formData.jobTitle, recommendedSkills.core, selectedSkills.length])
 
   // Get experience level description for display
   const getExperienceLevelDescription = (level: string) => {

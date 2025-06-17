@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useState, useEffect, useCallback } from 'react'
 
 interface DebugInfo {
   flask_config_keys: string[]
@@ -138,7 +140,7 @@ export default function PredictionDebugger() {
     }
   }
 
-  const fetchDebugInfo = async () => {
+  const fetchDebugInfo = useCallback(async () => {
     setLoading(true)
     setError(null)
     
@@ -189,7 +191,7 @@ export default function PredictionDebugger() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const testPreprocessing = async () => {
     try {
@@ -273,7 +275,7 @@ export default function PredictionDebugger() {
 
   useEffect(() => {
     fetchDebugInfo()
-  }, [])
+  }, [fetchDebugInfo])
 
   // Connection status indicator
   const ConnectionIndicator = () => {

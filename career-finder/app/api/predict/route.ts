@@ -64,6 +64,8 @@ export async function GET() {
       model_info: result.data
     })
   } catch (error) {
+    console.error(`An error has occured: ${error}`)
+
     return NextResponse.json({ 
       message: 'Frontend API running (Flask backend unavailable)',
       backend: 'Mock data fallback'

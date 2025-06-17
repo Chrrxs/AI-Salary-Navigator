@@ -44,8 +44,6 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// Specific API response for predictions
-export interface PredictionApiResponse extends ApiResponse<PredictionResult> {}
 
 // Type guards for validation
 export const isValidExperienceLevel = (level: string): level is PredictionInput['experienceLevel'] => {
