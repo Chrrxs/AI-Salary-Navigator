@@ -1,0 +1,30 @@
+{
+    "dataset_overview": {
+        "total_jobs": 15000,
+        "date_range": "2024-01-01 to 2025-04-30",
+        "countries_represented": 20,
+        "unique_job_titles": 20,
+        "salary_range": "$32,519 - $399,095"
+    },
+    "key_findings": {
+        "average_salary": "$115,349",
+        "median_salary": "$99,705",
+        "salary_std": "$60,261",
+        "avg_experience": "6.3 years",
+        "remote_work_adoption": "49.5%",
+        "most_common_experience_level": "MI",
+        "top_location": "Germany"
+    },
+    "cluster_insights": {
+        "optimal_clusters": 2,
+        "cluster_descriptions": {
+            "Cluster 0": "Medium Salary, Mid-level Experience, Low Remote",
+            "Cluster 1": "High Salary, Senior Experience, High Remote"
+        }
+    },
+    "geographic_insights": {
+        "highest_paying_country": "DNK",
+        "highest_job_density": "DEU",
+        "countries_analyzed": 10
+    }
+}
