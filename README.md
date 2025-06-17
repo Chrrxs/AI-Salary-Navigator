@@ -132,17 +132,6 @@ This project uses the **"Global AI Job Market and Salary Trends 2025"** dataset 
 - Date range: January 2024 - April 2025
 - 12 feature variables
 
-## Screenshots
-
-### Salary Predictor
-![Salary Predictor Interface](./screenshots/predictor.png)
-
-### Market Analytics Dashboard
-![Analytics Dashboard](./screenshots/analytics.png)
-
-### Geographic Analysis
-![Geographic Heatmap](./screenshots/geographic.png)
-
 ## Testing
 
 Run the test suite:
