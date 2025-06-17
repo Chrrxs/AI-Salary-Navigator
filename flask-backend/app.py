@@ -23,7 +23,7 @@ try:
     analytics_processor = get_analytics_processor()
     print("Analytics processor initialized successfully")
 except Exception as e:
-    print(f"⚠️ Warning: Analytics processor initialization failed: {str(e)}")
+    print(f"Warning: Analytics processor initialization failed: {str(e)}")
     print("   The prediction endpoints will still work, but analytics may have issues")
 
 # Configure logging

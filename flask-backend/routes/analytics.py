@@ -97,7 +97,7 @@ class AnalyticsProcessor:
     def _preprocess_data(self):
         """Clean and preprocess the data with better error handling"""
         if self.df is None or self.df.empty:
-            logger.warning("⚠️ No data to preprocess")
+            logger.warning("No data to preprocess")
             return
         
         original_count = len(self.df)
@@ -125,7 +125,7 @@ class AnalyticsProcessor:
             self.df = self.df[(self.df['salary_usd'] > 10000) & (self.df['salary_usd'] < 1000000)]
             logger.info(f" Salary filter: {before_salary_filter} → {len(self.df)} records")
         else:
-            logger.warning("⚠️ No salary column found, creating sample salary data")
+            logger.warning("No salary column found, creating sample salary data")
             self.df['salary_usd'] = np.random.normal(100000, 30000, len(self.df)).astype(int)
         
         # Handle experience level variations
@@ -153,7 +153,7 @@ class AnalyticsProcessor:
             self.df['experience_level'] = self.df['experience_level'].map(experience_mapping)
             self.df['experience_level'] = self.df['experience_level'].fillna('Entry Level')
         else:
-            logger.warning("⚠️ No experience level column found, creating sample data")
+            logger.warning("No experience level column found, creating sample data")
             self.df['experience_level'] = np.random.choice(['Entry Level', 'Mid Level', 'Senior Level', 'Executive'], len(self.df))
         
         # Handle company size variations  
@@ -184,7 +184,7 @@ class AnalyticsProcessor:
             high_salary_threshold = self.df['salary_usd'].quantile(0.9)
             self.df.loc[self.df['salary_usd'] > high_salary_threshold, 'company_size'] = 'Enterprise'
         else:
-            logger.warning("⚠️ No company size column found, creating sample data")
+            logger.warning("No company size column found, creating sample data")
             self.df['company_size'] = np.random.choice(['Small', 'Medium', 'Large', 'Enterprise'], len(self.df))
         
         # Handle location variations
@@ -203,7 +203,7 @@ class AnalyticsProcessor:
             
             self.df['location_clean'] = self.df['company_location'].apply(self._clean_location)
         else:
-            logger.warning("⚠️ No location column found, creating sample data")
+            logger.warning("No location column found, creating sample data")
             locations = ['United States', 'Canada', 'Germany', 'United Kingdom', 'France', 'India', 'China', 'Denmark']
             self.df['location_clean'] = np.random.choice(locations, len(self.df))
         
@@ -223,7 +223,7 @@ class AnalyticsProcessor:
             
             self.df['job_category'] = self.df['job_title'].apply(self._categorize_job_title)
         else:
-            logger.warning("⚠️ No job title column found, creating sample data")
+            logger.warning("No job title column found, creating sample data")
             titles = ['Data Scientist', 'ML Engineer', 'Data Engineer', 'AI Researcher', 'Data Analyst']
             self.df['job_title'] = np.random.choice(titles, len(self.df))
             self.df['job_category'] = self.df['job_title']
@@ -316,7 +316,7 @@ class AnalyticsProcessor:
     def apply_filters(self, filters: Dict[str, str]) -> pd.DataFrame:
         """Apply filters to the dataset with better error handling"""
         if self.df is None or self.df.empty:
-            logger.warning("⚠️ No data available for filtering")
+            logger.warning("No data available for filtering")
             return pd.DataFrame()
         
         filtered_df = self.df.copy()
