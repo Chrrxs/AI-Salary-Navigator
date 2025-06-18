@@ -96,14 +96,14 @@ export default function PredictionResults({ result }: PredictionResultsProps) {
   return (
     <div className="space-y-6">
       {/* Debug Information (remove in production) */}
-      <div className="bg-gray-100 p-4 rounded-lg text-xs">
+      {/* <div className="bg-gray-100 p-4 rounded-lg text-xs">
         <details>
           <summary className="cursor-pointer font-semibold">Debug Info (click to expand)</summary>
           <pre className="mt-2 whitespace-pre-wrap">
             {JSON.stringify(result, null, 2)}
           </pre>
         </details>
-      </div>
+      </div> */}
 
       {/* Main Prediction */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white">

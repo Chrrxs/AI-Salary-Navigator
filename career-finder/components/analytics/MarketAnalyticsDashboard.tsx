@@ -43,7 +43,7 @@ import {
 
 // Backend URL configuration
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+  process.env.NEXT_PUBLIC_FLASK_API_URL || 'http://localhost:5000'
 
 interface AnalyticsData {
   salaryDistribution: Array<{

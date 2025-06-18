@@ -9,7 +9,7 @@ import PredictionResults from '@/components/results/PredictionResults'
 
 // Backend URL configuration - MUST point to Flask server
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+  process.env.NEXT_PUBLIC_FLASK_API_URL || 'http://localhost:5000'
 
 console.log(' Prediction page using backend URL:', BACKEND_URL)
 

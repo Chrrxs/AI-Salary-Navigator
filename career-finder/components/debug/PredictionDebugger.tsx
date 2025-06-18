@@ -36,7 +36,7 @@ interface HealthCheck {
 }
 
 // Backend URL configuration - MUST be absolute URL to Flask server
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+const BACKEND_URL = process.env.NEXT_PUBLIC_FLASK_API_URL || 'http://localhost:5000'
 
 console.log(' Debug component using backend URL:', BACKEND_URL)
 
